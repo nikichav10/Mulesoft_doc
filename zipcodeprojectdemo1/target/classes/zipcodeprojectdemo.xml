@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:ws="http://www.mulesoft.org/schema/mule/ws" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="localhost" port="8089" doc:name="HTTP Listener Configuration"/>
+    <ws:consumer-config name="Web_Service_Consumer" wsdlLocation="http://www.webservicex.net/uszip.asmx?wsdl" service="USZip" port="USZipSoap" serviceAddress="http://www.webservicex.net/uszip.asmx" doc:name="Web Service Consumer"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" password="root" database="mysql" doc:name="MySQL Configuration"/>
+    <flow name="zipcodeprojectdemoFlow">
+        <file:inbound-endpoint path="D:\Users\supkadam\Desktop\New folder" responseTimeout="10000" doc:name="File"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="9c6645bf-9637-44bf-9518-4bc09bb4214c">
+            <dw:input-payload doc:sample="D:\Users\supkadam\Desktop\input.csv" mimeType="application/csv"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+%namespace ns0 http://www.webserviceX.NET
+---
+{
+	person:  {(payload map ((payload01 , indexOfPayload01) ->{
+		employee: {
+			Employee_ID: payload01.Employee_ID,
+			First_Name: payload01.First_Name,
+			Last_Name: payload01.Last_Name,
+			Address: payload01.Address,
+			City: payload01.City,
+			ZipCode: payload01.ZipCode
+		
+		}
+	}))
+	}
+}
+]]></dw:set-payload>
+        </dw:transform-message>
+        <choice doc:name="Choice">
+            <when expression="#[xpath3('/person/employee/Employee_ID') != empty &amp;&amp; xpath3('/person/employee/Address') != empty  &amp;&amp; xpath3('/person/employee/City') != empty &amp;&amp; xpath3('/person/employee/First_Name') != empty &amp;&amp; xpath3('/person/employee/Last_Name') != empty &amp;&amp; xpath3('/person/employee/ZipCode') != empty]">
+                <set-session-variable variableName="Name" value="#[xpath3('/person/employee/First_Name')]" doc:name="First Name"/>
+                <dw:transform-message doc:name="Transform Message" metadata:id="ba25b323-f2fe-487b-947e-64f7fff743f2">
+                    <dw:input-payload doc:sample="D:\Users\supkadam\Desktop\New folder\input.csv" mimeType="application/xml"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+%namespace ns0 http://www.webserviceX.NET
+---
+{
+	ns0#GetInfoByZIP: {
+		ns0#USZip: payload.person.employee.ZipCode
+	}
+	
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <logger message="Web service request ::::::::::::::::::::#[payload]" level="INFO" doc:name="Logger"/>
+                <ws:consumer config-ref="Web_Service_Consumer" operation="GetInfoByZIP" doc:name="Web Service Consumer"/>
+                <dw:transform-message doc:name="Transform Message" metadata:id="4ba0257f-a24d-44b4-b6e7-e34f12b02452">
+                    <dw:input-payload doc:sample="sample_data\GetInfoByZIPResponse.xml"/>
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+%namespace ns0 http://www.webserviceX.NET
+---
+{
+	NewDataSet: {
+		Table: {
+			CITY: payload.ns0#GetInfoByZIPResponse.ns0#GetInfoByZIPResult.NewDataSet.Table.CITY,
+			STATE: payload.ns0#GetInfoByZIPResponse.ns0#GetInfoByZIPResult.NewDataSet.Table.STATE,
+			ZIP: payload.ns0#GetInfoByZIPResponse.ns0#GetInfoByZIPResult.NewDataSet.Table.ZIP,
+			AREA_CODE: payload.ns0#GetInfoByZIPResponse.ns0#GetInfoByZIPResult.NewDataSet.Table.AREA_CODE,
+			TIME_ZONE: payload.ns0#GetInfoByZIPResponse.ns0#GetInfoByZIPResult.NewDataSet.Table.TIME_ZONE	
+		}
+	}
+}]]></dw:set-payload>
+                </dw:transform-message>
+                <set-variable variableName="zip" value="#[xpath3('/NewDataSet/Table/ZIP')]" doc:name="ZipWebService"/>
+                <choice doc:name="Choice">
+                    <when expression="#[flowVars.zip != empty]">
+                        <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                            <db:parameterized-query><![CDATA[insert into Person values(#[sessionVars.Name],#[xpath3('/NewDataSet/Table/CITY ')],#[xpath3('/NewDataSet/Table/STATE')],#[xpath3('/NewDataSet/Table/ZIP')]);]]></db:parameterized-query>
+                        </db:insert>
+                        <logger message="#['Data validated and inserted succesfully']" level="INFO" doc:name="Logger"/>
+                    </when>
+                    <otherwise>
+                        <logger message="#['Invalid ZipCode']" level="ERROR" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <logger message="#['Oops !!!!!!!!!!!!    Data missing']" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+
+    </flow>
+
+   
+</mule>
