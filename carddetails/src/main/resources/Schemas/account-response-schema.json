@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "account number": {
+      "type": "integer"
+    },
+    "account holder name": {
+      "type": "string"
+    },
+    "card type": {
+      "type": "string"
+    },
+    "card number": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "account number",
+    "account holder name",
+    "card type",
+    "card number"
+  ]
+}

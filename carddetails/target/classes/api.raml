@@ -1,0 +1,81 @@
+#%RAML 0.8
+baseUri: https://mocksvc.mulesoft.com/mocks/a7f4795f-2b3d-479b-8616-b557e554cb0a
+title: carddetails
+version: v1
+
+/accounts: 
+  /{accountnumber}:
+    uriParameters: 
+      accountnumber: 
+        type: number
+    get:
+      description: "Description of account number"
+      responses: 
+        200:
+          body: 
+            application/json:
+              example: |
+                {
+                "account number":123456,
+                "account holder name":"Tim smith",
+                "card type":"platinum",
+                "card number":4567891
+                }
+        404:
+          body: 
+            application/json:
+              example: |
+                {
+                "error":"resource not found"
+                }
+        500:
+          body: 
+            application/json:
+              example: |
+                {
+                "error":"internal server error"
+                }
+        400:
+          body: 
+            application/json:
+              example: |
+                {
+                "error":"uri parameters: accountnumber: not an number"
+                }
+/cards:
+  put:
+    description: "Enter card number"
+    responses: 
+      200:
+        body: 
+          application/json:
+            example: |
+              {
+              "card number":4567891,
+              "card holder name":"Tim Smith",
+              "start date":"12/01/2017",
+              "end date":"12/01/2027",
+              "cvv":"154"
+              }
+      404:
+          body: 
+            application/json:
+              example: |
+                {
+                "error":"resource not found"
+                }
+      500:
+        body: 
+          application/json:
+            example: |
+              {
+              "error":"Length of card number should be more than 6 and less than 16"
+              }
+      400:
+        body: 
+          application/json:
+            example: |
+              {
+              "error":"bad request"
+              }
+        

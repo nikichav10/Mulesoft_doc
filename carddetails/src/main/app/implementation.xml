@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8085" doc:name="HTTP Request Configuration"/>
+
+<flow name="/cards:api-config">
+        <validation:validate-size message="{ &quot;message&quot;:&quot;Length of card number should be more than 6 and less than 16&quot; }" value="#[message.inboundProperties.'http.query.params'.cardnumber]" min="6" max="16" doc:name="Validation"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/carddata" method="PUT" doc:name="HTTP Requester">
+            <http:request-builder>
+                <http:query-param paramName="cardnumber" value="#[message.inboundProperties.'http.query.params'.cardnumber]"/>
+            </http:request-builder>
+        </http:request>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+        <!-- <choice doc:name="Choice">
+            <otherwise>
+                <set-payload value="{ &quot;message&quot;:&quot; Card number must be greater than 6 and less than 16&quot; }" doc:name="Set Payload"/>
+            </otherwise>
+        </choice> -->
+    </flow>
+    <flow name="/accounts/{accountnumber}:api-config">
+        <validation:all    doc:name="Validation">
+            <validation:validations>
+                <validation:matches-regex value="#[message.inboundProperties.'http.uri.params'.accountnumber]" regex="^[0-9]+$"/>
+                <validation:validate-size value="#[message.inboundProperties.'http.uri.params'.accountnumber]" min="6" max="16"/>
+            </validation:validations>
+        </validation:all>
+        <!-- <validation:is-number value="#[message.inboundProperties.'http.uri.params'.accountnumber]" numberType="INTEGER" doc:name="Validation"/> -->
+        <http:request config-ref="HTTP_Request_Configuration" path="/data/{accountnumber}" method="GET" doc:name="HTTP Requester">
+            <http:request-builder>
+                <http:uri-param paramName="accountnumber" value="#[message.inboundProperties.'http.uri.params'.accountnumber]"/>
+            </http:request-builder>
+        </http:request>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+    </flow>
+</mule>

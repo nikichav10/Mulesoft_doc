@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "card number": {
+      "type": "integer"
+    },
+    "card holder name": {
+      "type": "string"
+    },
+    "start date": {
+      "type": "string"
+    },
+    "end date": {
+      "type": "string"
+    },
+    "cvv": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "card number",
+    "card holder name",
+    "start date",
+    "end date",
+    "cvv"
+  ]
+}
