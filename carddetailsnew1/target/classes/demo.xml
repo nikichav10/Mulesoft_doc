@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8085" doc:name="HTTP Listener Configuration"/>
+    <file:connector name="file-connector-config" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+    <flow name="demoFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/data/{accountnumber}" doc:name="HTTP" allowedMethods="GET"/>
+        <set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream('sample.json')]" doc:name="Set Payload"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <set-variable variableName="accnum" value="#[message.inboundProperties.'http.uri.params'.accountnumber]" doc:name="Variable"/>
+        <logger message="#[flowVars.accnum]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="8a626708-b3f0-4e4e-83c1-b1cba0215261">
+            <dw:input-variable mimeType="application/json" variableName="accnum"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	data: payload map (payload01,indexOfPayload)->{
+		account_number:payload01.account_number,
+		card_type: payload01.card_type,
+        card_number: payload01.card_number,
+        account_holder_name: payload01.account_holder_name
+	} filter $.account_number == flowVars.accnum
+	
+	}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[json:/data[0] != null] ">
+                <set-payload value="#[payload]" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="{ &quot;message&quot;:&quot;Account number is not valid&quot; }" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+        <!-- <choice doc:name="Choice">
+            <when expression="#[json:[0]/account_number == '123456'] ">
+                <set-payload doc:name="Set Payload" value="#[json:[0]]"/>
+            </when>
+            <otherwise>
+                <set-payload value="not valid" doc:name="Set Payload"/>
+            </otherwise>
+        </choice> -->
+    </flow>
+    <flow name="demoFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/carddata" allowedMethods="GET" doc:name="HTTP"/>
+        <set-variable variableName="cardnum" value="#[message.inboundProperties.'http.query.params'.cardnumber]" doc:name="Card Number"/>
+        <mulerequester:request resource="file://src/main/resources/carddata.json?connector=file-connector-config" doc:name="Mule Requester"/>
+        <byte-array-to-object-transformer doc:name="Byte Array to Object"/>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="4403ad52-f49b-4023-b457-7c73875dcfa5">
+            <dw:input-variable mimeType="application/json" variableName="cardnum"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	data: payload map (payload01,indexOfPayload)->{
+		card__holder_name:payload01.card__holder_name,
+		card_number: payload01.card_number,
+        start_date: payload01.start_date,
+        end_date: payload01.end_date,
+        cvv:payload01.cvv
+	} filter $.card_number == flowVars.cardnum
+	
+	}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[json:/data[0] != null] ">
+                <set-payload value="#[payload]" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="{ &quot;message&quot;:&quot;Card number is not valid&quot; }" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+   <!--  <sub-flow name="demoSub_Flow">
+        <file:outbound-endpoint path="C:\Users\cinamdar\AnypointStudio\workspace1\demo\src\main\resources" responseTimeout="10000" doc:name="File"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream('sample.json')]" doc:name="Set Payload"/>
+    </sub-flow> -->
+</mule>

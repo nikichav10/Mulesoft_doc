@@ -1,0 +1,13 @@
+{
+    "inputMessageMetadata": {
+        "flowVariables": {
+            "cardnum": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "cardnumber"
+            }
+        }
+    },
+    "outputMessageMetadata": {},
+    "id": "4403ad52-f49b-4023-b457-7c73875dcfa5",
+    "version": "5.2.0.0"
+}

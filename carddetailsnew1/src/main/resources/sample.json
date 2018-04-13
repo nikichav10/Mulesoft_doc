@@ -1,0 +1,26 @@
+[
+    {
+        "card_type": "platinum",
+        "card_number": 567891,
+        "account_holder_name": "Tim Smith",
+        "account_number": 123456
+    },
+	{
+        "card_type": "silver",
+        "card_number": 567892,
+        "account_holder_name": "George Smith",
+        "account_number": 234567
+    },
+	{
+        "card_type": "gold",
+        "card_number": 567893,
+        "account_holder_name": "Tim Willy",
+        "account_number": 345678
+    },
+	{
+        "card_type": "platinum",
+        "card_number": 567894,
+        "account_holder_name": "Sam Smith",
+        "account_number": 456789
+    }
+]

@@ -1,0 +1,31 @@
+[
+    {
+        "card__holder_name": "Tim Smith",
+        "card_number": 567891,
+        "start_date": "12/04/2017",
+        "end_date": "12/04/2023",
+		"cvv":154
+    },
+	 {
+        "card__holder_name": "George Smith",
+        "card_number": 567892,
+       "start_date": "10/05/2013",
+        "end_date": "10/05/2023",
+		"cvv":153
+    },
+	 {
+        "card__holder_name": "Tim Willy",
+        "card_number": 567893,
+        "start_date": "25/04/2016",
+        "end_date": "25/04/2026",
+		"cvv":152
+    },
+	 {
+        "card__holder_name": "Sam Smith",
+        "card_number": 567894,
+        "start_date": "12/08/2015",
+        "end_date": "12/08/2025",
+		"cvv":151
+    }
+	
+]
